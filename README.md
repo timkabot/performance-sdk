@@ -1,8 +1,64 @@
 # Performance SDK
 
-Callback-based Android performance SDK. The SDK measures stages, custom traces,
-Compose and XML (View) screen/widget render timing, screen session jank, and
-startup time.
+**Your app feels slow. Find out where the time goes.**
+
+A screen opens, but its data is still loading. Scrolling feels fine on your
+phone, yet users report stutters. Every team measures things a little differently.
+
+Performance SDK gives Android teams a shared way to measure screen loading,
+UI smoothness and their own expensive operations. Start with one screen, attach
+its owner, and send the events to the analytics you already use.
+
+## What You Get
+
+| Question | What the SDK gives you |
+| --- | --- |
+| Where does loading time go? | Separate data-ready and next-frame timings for screens and widgets. |
+| Which screens stutter? | Jank and frozen-frame counts, hitch rate and session duration. |
+| Who should investigate? | Screen and team identifiers attached to measurements. |
+| Is our own code expensive? | Named measurements around requests, mapping or any custom operation. |
+| Does device context matter? | Device tiers, refresh rate and process CPU/memory data; plug in your own network-quality classification. |
+
+**One measurement API across teams. Your data stays in your pipeline.**
+Use Compose or XML Views, define your own screen and team names, and route
+events through a callback. No required dashboard service or analytics vendor.
+
+## Try It On One Screen
+
+The included app lets you navigate between screens, load a recommendations
+widget and inspect the events as they arrive.
+
+```shell
+git clone https://github.com/timkabot/performance-sdk.git
+cd performance-sdk
+./gradlew :sample-app:installDebug
+```
+
+Requires repository access, JDK 21, Android SDK 36 and a connected Android 8.0+
+device or emulator. Open **Performance Sample** after installation.
+
+To add a measurement to your own app, initialize the SDK with an event callback,
+then wrap the operation you care about:
+
+```kotlin
+PerformanceSdk.init(
+    context = application,
+    eventCallback = { event -> analytics.enqueue(event) },
+)
+
+// In a coroutine: measure the request and keep its result.
+val products = PerformanceMeasure().measureSuspend(
+    space = "Catalog".asPerformanceSpace(),
+    owner = "Discovery".asPerformanceOwner(),
+    stage = PerformanceStage.NetworkRequestsTotalTime("loadProducts"),
+) {
+    repository.loadProducts()
+}
+```
+
+`analytics` and `repository` are your application's components. The SDK supplies
+the timing and event metadata; your existing pipeline stores and visualizes them.
+See [Compose tracing](#compose-tracing) or [XML tracing](#xml-view-tracing) next.
 
 ## Dependency
 
@@ -12,7 +68,7 @@ For another local project, publish to Maven Local and add `mavenLocal()` to
 that project's repositories before using the coordinates below.
 
 ```kotlin
-implementation("uz.uzum.mobile.performance:performance-sdk:<version>")
+implementation("io.github.timkabot.performance:performance-sdk:<version>")
 ```
 
 ## Initialization
@@ -72,7 +128,7 @@ For quick integration, strings can be wrapped:
 ```kotlin
 val measure = PerformanceMeasure()
 
-val cart = measure.measure(
+val cart = measure.measureSuspend(
     space = Screen.Cart,
     owner = Team.Checkout,
     stage = PerformanceStage.NetworkRequestsTotalTime("loadCart"),
@@ -159,7 +215,7 @@ Use `ViewWidgetTracer` for an independently loading section of an XML screen
 `UiWidgetTracer`.
 
 Sampling for a `ViewScreenTracer`/`ViewWidgetTracer` instance is decided once,
-at construction time, and held for its whole session — either all of its
+at first use, and held for its whole session — either all of its
 events are emitted or none of them are, matching the Compose tracers'
 per-composition sampling. This differs from `PerformanceMeasure`/`saveTime`
 calls elsewhere in your code, which sample independently on every call.
@@ -243,7 +299,7 @@ the command line:
 ```shell
 export ANDROID_HOME=$HOME/Library/Android/sdk # or create local.properties with sdk.dir
 ./gradlew :sample-app:installDebug
-$ANDROID_HOME/platform-tools/adb shell am start -n uz.uzum.performance.sample/.MainActivity
+$ANDROID_HOME/platform-tools/adb shell am start -n io.github.timkabot.performance.sample/.MainActivity
 ```
 
 The sample app shows:
@@ -266,7 +322,7 @@ The repo also contains unit tests for callback delivery, buffering, and event
 shape:
 
 ```shell
-./gradlew :performance-sdk:testDebugUnitTest --tests uz.uzum.performance.sample.PerformanceSdkSampleTest
+./gradlew :performance-sdk:testDebugUnitTest --tests io.github.timkabot.performance.sample.PerformanceSdkSampleTest
 ```
 
 The tests use consumer-owned enums, a fake callback, and logs both SDK events

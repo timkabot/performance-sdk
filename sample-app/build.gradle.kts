@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "uz.uzum.performance.sample"
+    namespace = "io.github.timkabot.performance.sample"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "uz.uzum.performance.sample"
+        applicationId = "io.github.timkabot.performance.sample"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

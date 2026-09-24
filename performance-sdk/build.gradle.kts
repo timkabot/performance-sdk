@@ -7,14 +7,14 @@ plugins {
     id("maven-publish")
 }
 
-group = "uz.uzum.mobile.performance"
+group = "io.github.timkabot.performance"
 version = providers.gradleProperty("performanceSdkVersion")
     .orElse(providers.gradleProperty("PERFORMANCE_SDK_VERSION"))
     .orElse("0.2.0")
     .get()
 
 android {
-    namespace = "uz.uzum.performance.sdk"
+    namespace = "io.github.timkabot.performance.sdk"
     compileSdk = 36
     defaultConfig {
         minSdk = 26
@@ -51,7 +51,7 @@ publishing {
             artifactId = "performance-sdk"
             afterEvaluate { from(components["release"]) }
             pom {
-                name.set("Uzum Performance SDK")
+                name.set("Performance SDK")
                 description.set("Callback-based Android performance measurement SDK.")
             }
         }
